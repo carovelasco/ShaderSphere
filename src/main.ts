@@ -68,13 +68,55 @@ function generateCube(): Float32Array {
   return new Float32Array(data);
 }
 
+/*
 function generateSphere(stacks: number, slices: number): Float32Array {
   // TODO: implement UV sphere generation.
   console.warn("generateSphere() not implemented yet — returning placeholder");
   return new Float32Array(3 * 8); // 3 zero vertices
 }
+*/
 
+function generateSphere(stacks: number, slices: number): Float32Array {
+  const vertices: number[] = [];
 
+  for (let i = 0; i < stacks; i++) {
+    const theta1 = (i / stacks) * Math.PI;        // ángulo latitud actual
+    const theta2 = ((i + 1) / stacks) * Math.PI;  // ángulo latitud siguiente
+
+    for (let j = 0; j < slices; j++) {
+      const phi1 = (j / slices) * 2 * Math.PI;        // ángulo longitud actual
+      const phi2 = ((j + 1) / slices) * 2 * Math.PI;  // ángulo longitud siguiente
+
+      // 4 esquinas del quad
+      const p = [
+        // [x, y, z] — en esfera unitaria, normal == posición
+        [Math.sin(theta1) * Math.cos(phi1), Math.cos(theta1), Math.sin(theta1) * Math.sin(phi1)],
+        [Math.sin(theta2) * Math.cos(phi1), Math.cos(theta2), Math.sin(theta2) * Math.sin(phi1)],
+        [Math.sin(theta2) * Math.cos(phi2), Math.cos(theta2), Math.sin(theta2) * Math.sin(phi2)],
+        [Math.sin(theta1) * Math.cos(phi2), Math.cos(theta1), Math.sin(theta1) * Math.sin(phi2)],
+      ];
+
+      // UVs correspondientes
+      const uv = [
+        [j / slices,       i / stacks      ],
+        [j / slices,       (i + 1) / stacks],
+        [(j + 1) / slices, (i + 1) / stacks],
+        [(j + 1) / slices, i / stacks      ],
+      ];
+
+      // Triangulo 1: 0-1-2  |  Triangulo 2: 0-2-3
+      for (const idx of [0, 1, 2, 0, 2, 3]) {
+        const [x, y, z] = p[idx];
+        const [u, v]    = uv[idx];
+        // layout: [x, y, z, nx, ny, nz, u, v]
+        // normal == posición en esfera unitaria
+        vertices.push(x, y, z, x, y, z, u, v);
+      }
+    }
+  }
+
+  return new Float32Array(vertices);
+}
 // Geometry buffers — rebuilt when the user switches shape
 let activeShape: "cube" | "sphere" = "cube";
 
